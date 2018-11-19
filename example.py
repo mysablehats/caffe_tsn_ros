@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 import roslib
-roslib.load_manifest('my_package')
+roslib.load_manifest('caffe_tsn_ros')
 import sys
 import rospy
 import cv2
