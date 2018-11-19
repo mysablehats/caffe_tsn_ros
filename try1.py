@@ -24,29 +24,7 @@ import multiprocessing
 
 #####A LOT of those parameters will not be neccessary anymore, with the whole splitting into rgb and flow and with my decision to remove some of the multiprocessing stuff. anyway, so far will keep the mess...
 
-sys.argv = ['','hmdb51','1','rgb','/temporal-segment-networks/my_of/','models/hmdb51/tsn_bn_inception_rgb_deploy.prototxt',\
-            'models/hmdb51_split_1_tsn_rgb_reference_bn_inception.caffemodel' ,  '--num_worker', '1', '--save_scores', 'myscores_fre.txt']
 
-parser = argparse.ArgumentParser()
-parser.add_argument('dataset', type=str, choices=['ucf101', 'hmdb51'])
-parser.add_argument('split', type=int, choices=[1, 2, 3],
-                    help='on which split to test the network')
-parser.add_argument('modality', type=str, choices=['rgb', 'flow'])
-parser.add_argument('frame_path', type=str, help="root directory holding the frames")
-parser.add_argument('net_proto', type=str)
-parser.add_argument('net_weights', type=str)
-parser.add_argument('--rgb_prefix', type=str, help="prefix of RGB frames", default='img_')
-parser.add_argument('--flow_x_prefix', type=str, help="prefix of x direction flow images", default='flow_x_')
-parser.add_argument('--flow_y_prefix', type=str, help="prefix of y direction flow images", default='flow_y_')
-parser.add_argument('--num_frame_per_video', type=int, default=25,
-                    help="prefix of y direction flow images")
-parser.add_argument('--save_scores', type=str, default=None, help='the filename to save the scores in')
-parser.add_argument('--num_worker', type=int, default=1)
-parser.add_argument("--caffe_path", type=str, default='./lib/caffe-action/', help='path to the caffe toolbox')
-parser.add_argument("--gpus", type=int, nargs='+', default=None, help='specify list of gpu to use')
-args = parser.parse_args()
-
-print(args)
 
 def build_net():
     global net
@@ -143,6 +121,30 @@ def main(args):
   rospy.init_node('image_converter', anonymous=True)
   ic = image_converter()
 
+
+  sys.argv = ['','hmdb51','1','rgb','/temporal-segment-networks/my_of/','models/hmdb51/tsn_bn_inception_rgb_deploy.prototxt',\
+            'models/hmdb51_split_1_tsn_rgb_reference_bn_inception.caffemodel' ,  '--num_worker', '1', '--save_scores', 'myscores_fre.txt']
+
+  parser = argparse.ArgumentParser()
+  parser.add_argument('dataset', type=str, choices=['ucf101', 'hmdb51'])
+  parser.add_argument('split', type=int, choices=[1, 2, 3],
+                    help='on which split to test the network')
+  parser.add_argument('modality', type=str, choices=['rgb', 'flow'])
+  parser.add_argument('frame_path', type=str, help="root directory holding the frames")
+  parser.add_argument('net_proto', type=str)
+  parser.add_argument('net_weights', type=str)
+  parser.add_argument('--rgb_prefix', type=str, help="prefix of RGB frames", default='img_')
+  parser.add_argument('--flow_x_prefix', type=str, help="prefix of x direction flow images", default='flow_x_')
+  parser.add_argument('--flow_y_prefix', type=str, help="prefix of y direction flow images", default='flow_y_')
+  parser.add_argument('--num_frame_per_video', type=int, default=25,
+                    help="prefix of y direction flow images")
+  parser.add_argument('--save_scores', type=str, default=None, help='the filename to save the scores in')
+  parser.add_argument('--num_worker', type=int, default=1)
+  parser.add_argument("--caffe_path", type=str, default='./lib/caffe-action/', help='path to the caffe toolbox')
+  parser.add_argument("--gpus", type=int, nargs='+', default=None, help='specify list of gpu to use')
+  args = parser.parse_args()
+  print(args)
+  
   sys.path.append(os.path.join(args.caffe_path, 'python'))
   from pyActionRecog import parse_directory
   from pyActionRecog import parse_split_file
