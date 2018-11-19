@@ -13,13 +13,13 @@ from cv_bridge import CvBridge, CvBridgeError
 class image_converter:
 
   def __init__(self):
-    self.image_pub = rospy.Publisher("image_topic_2",Image)
+    self.image_pub = rospy.Publisher("rep/image_raw",Image)
 
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("videofiles/image_raw",Image,self.callback)
 
   def callback(self,data):
-    rospy.loginfo("reached callback. that means I can read the Subscriber!")
+    rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
