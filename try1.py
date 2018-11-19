@@ -118,6 +118,7 @@ class image_converter:
       print(e)
 
 def main(args):
+  global args
   rospy.init_node('image_converter', anonymous=True)
   ic = image_converter()
 
@@ -144,7 +145,7 @@ def main(args):
   parser.add_argument("--gpus", type=int, nargs='+', default=None, help='specify list of gpu to use')
   args = parser.parse_args()
   print(args)
-  
+
   sys.path.append(os.path.join(args.caffe_path, 'python'))
   from pyActionRecog import parse_directory
   from pyActionRecog import parse_split_file
