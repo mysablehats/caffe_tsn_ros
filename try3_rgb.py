@@ -30,6 +30,8 @@ class image_converter:
 
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("videofiles/image_raw", Image,self.callback,queue_size=1)
+    from pyActionRecog.utils.video_funcs import default_aggregation_func
+    from pyActionRecog.action_caffe import CaffeNet
     self.frame_scores = []
     self.net = CaffeNet('models/hmdb51/tsn_bn_inception_rgb_deploy.prototxt', 'models/hmdb51_split_1_tsn_rgb_reference_bn_inception.caffemodel', 0)
   def callback(self,data):
@@ -125,8 +127,7 @@ def main(argss):
   sys.path.append(os.path.join(args.caffe_path, 'python'))
   from pyActionRecog import parse_directory
   from pyActionRecog import parse_split_file
-  from pyActionRecog.utils.video_funcs import default_aggregation_func
-  from pyActionRecog.action_caffe import CaffeNet
+
 
 # build neccessary information
   print(args.dataset)
