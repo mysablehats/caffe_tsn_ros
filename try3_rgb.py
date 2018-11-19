@@ -45,10 +45,10 @@ class image_converter:
     if cols > 60 and rows > 60 :
       cv2.circle(cv_image, (50,50), 10, 255)
       scores = self.net.predict_single_frame([cv_image,], 'fc-action', frame_size=(340, 256))
-      print(scores)
+      #print(scores)
       self.frame_scores.append(scores)
     if len(self.frame_scores)>50:
-        print([np.argmax(default_aggregation_func(x[0])) for x in video_scores_rgb])
+        print([np.argmax(default_aggregation_func(x[0])) for x in self.frame_scores])
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
     except CvBridgeError as e:
