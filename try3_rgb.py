@@ -31,6 +31,7 @@ class image_converter:
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("videofiles/image_raw", Image,self.callback,queue_size=1)
     self.frame_scores = []
+    self.net = CaffeNet('models/hmdb51/tsn_bn_inception_rgb_deploy.prototxt', 'models/hmdb51_split_1_tsn_rgb_reference_bn_inception.caffemodel', 0)
   def callback(self,data):
     #rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
     try:
@@ -41,7 +42,7 @@ class image_converter:
     (rows,cols,channels) = cv_image.shape
     if cols > 60 and rows > 60 :
       cv2.circle(cv_image, (50,50), 10, 255)
-      scores = net.predict_single_frame([cv_image,], 'fc-action', frame_size=(340, 256))
+      scores = self.net.predict_single_frame([cv_image,], 'fc-action', frame_size=(340, 256))
       print(scores)
       self.frame_scores.append(scores)
     if len(self.frame_scores)>50:
