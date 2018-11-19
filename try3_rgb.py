@@ -29,7 +29,7 @@ class image_converter:
     self.image_pub = rospy.Publisher("image_raw",Image)
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("videofiles/image_raw",queue_size=1, Image,self.callback)
+    self.image_sub = rospy.Subscriber("videofiles/image_raw", Image,self.callback,queue_size=1)
     self.frame_scores = []
   def callback(self,data):
     #rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
