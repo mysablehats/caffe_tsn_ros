@@ -27,7 +27,36 @@ import multiprocessing
 
 
 
-def build_net():
+
+class image_converter:
+
+  def __init__(self):
+    self.image_pub = rospy.Publisher("image_raw",Image)
+
+    self.bridge = CvBridge()
+    self.image_sub = rospy.Subscriber("videofiles/image_raw",Image,self.callback)
+
+  def callback(self,data):
+    #rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
+    try:
+      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(e)
+
+    (rows,cols,channels) = cv_image.shape
+    if cols > 60 and rows > 60 :
+      cv2.circle(cv_image, (50,50), 10, 255)
+
+    #cv2.imshow("Image window", cv_image)
+    #cv2.waitKey(3)
+
+    try:
+      self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
+    except CvBridgeError as e:
+      print(e)
+
+def main(argss):
+  def build_net():
     global net
     my_id = multiprocessing.current_process()._identity[0] \
         if args.num_worker > 1 else 1
@@ -36,7 +65,7 @@ def build_net():
     else:
         net = CaffeNet(args.net_proto, args.net_weights, gpu_list[my_id - 1])
 
-def eval_video(video):
+  def eval_video(video):
     global net
     label = video[1]
     vid = video[0]
@@ -90,35 +119,7 @@ def eval_video(video):
     print('video {} done'.format(vid))
     sys.stdin.flush()
     return np.array(frame_scores), label
-
-class image_converter:
-
-  def __init__(self):
-    self.image_pub = rospy.Publisher("image_raw",Image)
-
-    self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("videofiles/image_raw",Image,self.callback)
-
-  def callback(self,data):
-    #rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
-    try:
-      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    except CvBridgeError as e:
-      print(e)
-
-    (rows,cols,channels) = cv_image.shape
-    if cols > 60 and rows > 60 :
-      cv2.circle(cv_image, (50,50), 10, 255)
-
-    #cv2.imshow("Image window", cv_image)
-    #cv2.waitKey(3)
-
-    try:
-      self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
-    except CvBridgeError as e:
-      print(e)
-
-def main(argss):
+    
   global args
   rospy.init_node('image_converter', anonymous=True)
   ic = image_converter()
