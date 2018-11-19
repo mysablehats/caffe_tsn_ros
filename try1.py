@@ -17,7 +17,8 @@ import itertools
 import os
 print(os.getcwd())
 sys.path.append(os.path.abspath("/temporal-segment-networks/tools"))
-sys.path.append('/temporal-segment-networks/')
+sys.path.append('/temporal-segment-networks')
+sys.path.insert(0, '/temporal-segment-networks/lib/caffe-action/python')
 import argparse
 import math
 import multiprocessing
