@@ -52,7 +52,7 @@ class image_converter:
       self.frame_scores.append(scores)
     if len(self.frame_scores)>50:
         curract = self.actionlist[np.argmax(self.defprox(self.frame_scores))]
-        cv2.putText(cv_image,curract,(10,246), self.font, 2,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(cv_image,curract,(10,246), self.font, 2,(255,255,255),2)
         self.frame_scores = []
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
