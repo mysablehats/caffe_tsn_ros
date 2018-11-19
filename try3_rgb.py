@@ -32,6 +32,7 @@ class image_converter:
     self.image_sub = rospy.Subscriber("videofiles/image_raw", Image,self.callback,queue_size=1)
     from pyActionRecog.utils.video_funcs import default_aggregation_func
     from pyActionRecog.action_caffe import CaffeNet
+    self.defprox = default_aggregation_func
     self.frame_scores = []
     self.net = CaffeNet('models/hmdb51/tsn_bn_inception_rgb_deploy.prototxt', 'models/hmdb51_split_1_tsn_rgb_reference_bn_inception.caffemodel', 0)
   def callback(self,data):
@@ -48,7 +49,7 @@ class image_converter:
       #print(scores)
       self.frame_scores.append(scores)
     if len(self.frame_scores)>50:
-        print([np.argmax(default_aggregation_func(x[0])) for x in self.frame_scores])
+        print([np.argmax(self.defprox(x[0])) for x in self.frame_scores])
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
     except CvBridgeError as e:
