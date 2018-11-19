@@ -49,7 +49,7 @@ class image_converter:
       #print(scores)
       self.frame_scores.append(scores)
     if len(self.frame_scores)>50:
-        print([np.argmax(self.defprox(x[0])) for x in self.frame_scores])
+        print(np.argmax(self.defprox(self.frame_scores)))
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
     except CvBridgeError as e:
