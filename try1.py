@@ -150,7 +150,7 @@ def main(args):
   from pyActionRecog.action_caffe import CaffeNet
 
 # build neccessary information
-  print args.dataset
+  print(args.dataset)
   split_tp = parse_split_file(args.dataset)
   f_info = parse_directory(args.frame_path,
                          args.rgb_prefix, args.flow_x_prefix, args.flow_y_prefix)
@@ -164,8 +164,7 @@ def main(args):
 
   if 1:
     eval_video_list =  [('ua',1)]
-    print(eval_video_list[0
-                     ])
+    print(eval_video_list[0])
     print(f_info)
 
   if args.num_worker > 1:
