@@ -46,7 +46,7 @@ parser.add_argument("--caffe_path", type=str, default='./lib/caffe-action/', hel
 parser.add_argument("--gpus", type=int, nargs='+', default=None, help='specify list of gpu to use')
 args = parser.parse_args()
 
-print args
+print(args)
 
 def build_net():
     global net
