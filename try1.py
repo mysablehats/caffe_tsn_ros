@@ -119,7 +119,7 @@ def main(argss):
     print('video {} done'.format(vid))
     sys.stdin.flush()
     return np.array(frame_scores), label
-    
+
   global args
   rospy.init_node('image_converter', anonymous=True)
   ic = image_converter()
@@ -174,10 +174,10 @@ def main(argss):
 
   if args.num_worker > 1:
     pool = multiprocessing.Pool(args.num_worker, initializer=build_net)
-    video_scores_rgb = pool.map(eval_video, log_progress(eval_video_list))
+    video_scores_rgb = pool.map(eval_video, eval_video_list)
   else:
     build_net()
-    video_scores_rgb = map(eval_video, log_progress(eval_video_list))
+    video_scores_rgb = map(eval_video, eval_video_list)
 
   video_pred = [np.argmax(default_aggregation_func(x[0])) for x in video_scores_rgb]
   print(video_pred)
