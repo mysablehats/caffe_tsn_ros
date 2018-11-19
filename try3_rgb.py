@@ -27,7 +27,7 @@ class image_converter:
 
   def __init__(self):
     self.image_pub = rospy.Publisher("image_raw",Image)
-
+    self.actionlist = [brush_hair,cartwheel,catch,chew,clap,climb,climb_stairs,dive,draw_sword,dribble,drink,eat,fall_floor,fencing,flic_flac,golf,handstand,hit,hug,jump,kick,kick_ball,kiss,laugh,pick,pour,pullup,punch,push,pushup,ride_bike,ride_horse,run,shake_hands,shoot_ball,shoot_bow,shoot_gun,sit,situp,smile,smoke,somersault,stand,swing_baseball,sword,sword_exercise,talk,throw,turn,walk,wave]
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("videofiles/image_raw", Image,self.callback,queue_size=1)
     from pyActionRecog.utils.video_funcs import default_aggregation_func
@@ -49,7 +49,8 @@ class image_converter:
       #print(scores)
       self.frame_scores.append(scores)
     if len(self.frame_scores)>50:
-        print(np.argmax(self.defprox(self.frame_scores)))
+        print(self.actionlist[np.argmax(self.defprox(self.frame_scores))])
+        self.frame_scores = []
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
     except CvBridgeError as e:
