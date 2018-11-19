@@ -118,7 +118,7 @@ class image_converter:
     except CvBridgeError as e:
       print(e)
 
-def main(args):
+def main(argss):
   global args
   rospy.init_node('image_converter', anonymous=True)
   ic = image_converter()
