@@ -108,7 +108,7 @@ def eval_video(video):
             scores = net.predict_single_flow_stack(flow_stack, score_name, frame_size=(340, 256))
             frame_scores.append(scores)
 
-    print 'video {} done'.format(vid)
+    print('video {} done'.format(vid))
     sys.stdin.flush()
     return np.array(frame_scores), label
 
