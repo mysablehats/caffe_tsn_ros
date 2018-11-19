@@ -19,7 +19,7 @@ class image_converter:
     self.image_sub = rospy.Subscriber("videofiles/image_raw",Image,self.callback)
 
   def callback(self,data):
-    rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
+    #rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
