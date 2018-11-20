@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <node name="class_tsn_rgb" pkg="caffe_tsn_ros" type="class_tsn_rgb" respawn="false" output="screen">
+  <node name="class_tsn_rgb" pkg="caffe_tsn_ros" type="class_tsn_rgb.py" respawn="false" output="screen">
 	  <param name="device_id" value="0"/>
     <param name="dataset" value="hmdb51"/>
     <param name="split" value="1"/>
