@@ -42,7 +42,7 @@ class image_converter:
     self.defprox = default_aggregation_func
     self.frame_scores = []
     self.prototxt = mypath+'/models/'+ self.dataset +'/tsn_bn_inception_rgb_deploy.prototxt'
-    self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+self.split+'_tsn_rgb_reference_bn_inception.caffemodel'
+    self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+str(self.split)+'_tsn_rgb_reference_bn_inception.caffemodel'
     self.net = CaffeNet(self.prototxt, self.caffemodel, self.device_id)
     self.font = cv2.FONT_HERSHEY_SIMPLEX
 
