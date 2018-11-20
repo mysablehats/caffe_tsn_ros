@@ -32,11 +32,12 @@ class image_converter:
     self.dataset = rospy.get_param('~dataset')
     self.device_id = rospy.get_param('~device_id')
     self.split = rospy.get_param('~split')
+    self.videotopic = rospy.get_param('~video_topic')
     self.classwindow = rospy.get_param('~classification_frame_window')
     ###TODO: if it is another dataset, this list is different. will need to do an if ... thing here for the ufc101
     self.actionlist = ['brush_hair','cartwheel','catch','chew','clap','climb','climb_stairs','dive','draw_sword','dribble','drink','eat','fall_floor','fencing','flic_flac','golf','handstand','hit','hug','jump','kick','kick_ball','kiss','laugh','pick','pour','pullup','punch','push','pushup','ride_bike','ride_horse','run','shake_hands','shoot_ball','shoot_bow','shoot_gun','sit','situp','smile','smoke','somersault','stand','swing_baseball','sword','sword_exercise','talk','throw','turn','walk','wave']
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("videofiles/image_raw", Image,self.callback,queue_size=1)
+    self.image_sub = rospy.Subscriber(self.videotopic, Image,self.callback,queue_size=1)
     from pyActionRecog.utils.video_funcs import default_aggregation_func
     from pyActionRecog.action_caffe import CaffeNet
     self.defprox = default_aggregation_func
@@ -61,7 +62,7 @@ class image_converter:
     self.frame_scores.append(scores)
     if len(self.frame_scores)>self.classwindow: #TODO: make this window a parameter
         curract = self.actionlist[np.argmax(self.defprox(self.frame_scores))]
-        cv2.putText(cv_image,curract,(10,246), self.font, 1,(255,255,255),2)
+        cv2.putText(cv_image,curract,(10,226), self.font, 1,(255,255,255),2)
         self.frame_scores.pop()
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
