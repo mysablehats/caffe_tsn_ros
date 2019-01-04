@@ -29,7 +29,7 @@ class image_converter:
   def __init__(self):
     global mypath
     self.image_pub = rospy.Publisher("class_overlay_image_raw",Image)
-    self.label_pub = rospy.Publisher("class_label", String, queue_size=1)
+    self.label_pub = rospy.Publisher("action", String, queue_size=1)
     self.dataset = rospy.get_param('~dataset')
     self.device_id = rospy.get_param('~device_id')
     self.split = rospy.get_param('~split')
@@ -47,9 +47,10 @@ class image_converter:
     self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+str(self.split)+'_tsn_rgb_reference_bn_inception.caffemodel'
     self.net = CaffeNet(self.prototxt, self.caffemodel, self.device_id)
     self.font = cv2.FONT_HERSHEY_SIMPLEX
+    rospy.loginfo("waiting for callback from " + self.videotopic +" to do anything")
 
   def callback(self,data):
-    #rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
+    rospy.logdebug("reached callback. that means I can read the Subscriber!")
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
@@ -59,15 +60,17 @@ class image_converter:
     #if cols > 60 and rows > 60 :
       #cv2.circle(cv_image, (50,50), 10, 255)
     scores = self.net.predict_single_frame([cv_image,], 'fc-action', frame_size=(340, 256))
-      #print(scores)
+    #print((scores))
     self.frame_scores.append(scores)
     if len(self.frame_scores)>self.classwindow:
         curract = self.actionlist[np.argmax(self.defprox(self.frame_scores))]
         cv2.putText(cv_image,curract,(10,226), self.font, 1,(255,255,255),2)
-        self.frame_scores.pop()
+        self.frame_scores.pop(0)
         self.label_pub.publish(String(curract))
+	rospy.logdebug("published the label!")
     try:
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(cv_image, "bgr8"))
+      rospy.logdebug("published image")
     except CvBridgeError as e:
       print(e)
 
