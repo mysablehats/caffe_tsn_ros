@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+  <node name="loopback_image" pkg="caffe_tsn_ros" type="example.py" respawn="false" output="screen"/>
+</launch>
