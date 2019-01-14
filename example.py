@@ -14,9 +14,10 @@ class image_converter:
 
   def __init__(self):
     self.image_pub = rospy.Publisher("image_raw",Image)
+    imin = rospy.get_param('~image_input', "videofiles/image_raw")
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("videofiles/image_raw",Image,self.callback)
+    self.image_sub = rospy.Subscriber(imin,Image,self.callback)
 
   def callback(self,data):
     #rospy.loginfo_once("reached callback. that means I can read the Subscriber!")
