@@ -13,7 +13,9 @@ from cv_bridge import CvBridge, CvBridgeError
 class image_converter:
 
   def __init__(self):
-    self.image_pub = rospy.Publisher("image_raw",Image)
+    imout = rospy.get_param('~image_output', "image_raw")
+
+    self.image_pub = rospy.Publisher(imout,Image)
     imin = rospy.get_param('~image_input', "videofiles/image_raw")
 
     self.bridge = CvBridge()
