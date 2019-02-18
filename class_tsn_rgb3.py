@@ -46,7 +46,15 @@ class tsn_classifier:
     self.split = rospy.get_param('~split',1)
     self.videotopic = rospy.get_param('~video_topic','videofiles/image_raw')
     self.classwindow = rospy.get_param('~classification_frame_window',50)
-    self.actionlist = rospy.get_param('action_list', ['brush_hair','cartwheel','catch','chew','clap','climb','climb_stairs','dive','draw_sword','dribble','drink','eat','fall_floor','fencing','flic_flac','golf','handstand','hit','hug','jump','kick','kick_ball','kiss','laugh','pick','pour','pullup','punch','push','pushup','ride_bike','ride_horse','run','shake_hands','shoot_ball','shoot_bow','shoot_gun','sit','situp','smile','smoke','somersault','stand','swing_baseball','sword','sword_exercise','talk','throw','turn','walk','wave'])
+    self.actionlist = rospy.get_param('~action_list', ['brush_hair','cartwheel','catch','chew','clap','climb','climb_stairs','dive','draw_sword','dribble','drink','eat','fall_floor','fencing','flic_flac','golf','handstand','hit','hug','jump','kick','kick_ball','kiss','laugh','pick','pour','pullup','punch','push','pushup','ride_bike','ride_horse','run','shake_hands','shoot_ball','shoot_bow','shoot_gun','sit','situp','smile','smoke','somersault','stand','swing_baseball','sword','sword_exercise','talk','throw','turn','walk','wave'])
+    if type(self.actionlist) is str:
+        self.actionlist = eval(self.actionlist)
+        self.actionlist.sort()
+    self.chooselist = rospy.get_param('~choose_list',[])
+    if type(self.chooselist) is str:
+        self.chooselist = eval(self.chooselist)
+        self.chooselist.sort()
+    ###probably should use the nice rosparam thingy here to avoid these problems...
     self.framesize_width = rospy.get_param('~framesize_width',340)
     self.framesize_height = rospy.get_param('~framesize_height',256)
 
@@ -56,7 +64,23 @@ class tsn_classifier:
     # internals
     self.bridge = CvBridge()
     from pyActionRecog.utils.video_funcs import default_aggregation_func
-    self.defprox = default_aggregation_func
+    if self.chooselist:
+        keepi = []
+        rospy.logwarn('defined own subset of actions! classification will be reduced to smaller set of choices, namely:'+str(self.chooselist))
+        #print(range(0,len(self.actionlist)))
+        for i in range(0,len(self.actionlist)):
+             for j in range(0, len(self.chooselist)):
+                 #print(self.actionlist[i])
+                 #print( self.chooselist[j])
+                 if self.actionlist[i] == self.chooselist[j]:
+                     keepi.append(i)
+        tobedeleted = set(range(0,len(self.actionlist)))-set(keepi)
+        #print(tobedeleted)
+        self.defprox = lambda x: np.delete(default_aggregation_func(x),list(tobedeleted))
+        self.actionlist = self.chooselist
+    else:
+        rospy.logwarn('No choose_list defined. Will classify within the whole set. ')
+        self.defprox = default_aggregation_func
     self.frame_scores = []
     self.prototxt = mypath+'/models/'+ self.dataset +'/tsn_bn_inception_rgb_deploy.prototxt'
     self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+str(self.split)+'_tsn_rgb_reference_bn_inception.caffemodel'
