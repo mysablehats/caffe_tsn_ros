@@ -29,31 +29,48 @@ import argparse
 import math
 import multiprocessing
 import caffe_tsn_ros.msg
+from copy import deepcopy
 
 class FunnyPublisher:
     def __init__(self,name, actionlist, defprox):
         self.label_pub = rospy.Publisher(name+'_label',String, queue_size=1)
         self.array_pub = rospy.Publisher(name+'_label_dic',caffe_tsn_ros.msg.ActionDic, queue_size=1)
         self.actionlist = actionlist
+        #rospy.logdebug('my action list:')
+        #rospy.logdebug(self.actionlist)
         self.defprox = defprox
         self.name = name
+        self.lastaction = []
         rospy.loginfo('FP {} initialized'.format(self.name))
     def pub(self,vidscores):
         try:
+            #rospy.logdebug(len(vidscores))
+            #rospy.logdebug(vidscores)
             conflist = self.defprox(vidscores)
-            self.label_pub.publish(self.actionlist[np.argmax(conflist)])
+            #rospy.logdebug('length of conflist %d () for hmdb51 should be 51'%len(conflist))
+            #rospy.logdebug(conflist)
+            self.lastaction = self.actionlist[np.argmax(conflist)]
+            self.label_pub.publish(self.lastaction)
             actionDic_but_it_is_a_list = []
             for action,confidence in zip(self.actionlist,conflist):
-                thisAction = caffe_tsn_ros.msg.Action
+                thisAction = caffe_tsn_ros.msg.Action()
                 thisAction.action = action
                 thisAction.confidence = confidence
+                #rospy.logdebug('what I am stacking: action, confidence: (%s,%f)'%(action, confidence))
                 actionDic_but_it_is_a_list.append(thisAction)
+                thisAction = []
+            #for actionvec in actionDic_but_it_is_a_list:
+
+                #rospy.logdebug('what I actually stacked: action, confidence: (%s,%f)'%(actionvec.action, actionvec.confidence))
+            #rospy.logdebug('what I was meant to publish is: len %d'%len(actionDic_but_it_is_a_list))
+            #rospy.logdebug(actionDic_but_it_is_a_list)
             self.array_pub.publish(actionDic_but_it_is_a_list)
             rospy.logdebug('FP {} published alright. '.format(self.name))
         except Exception as e:
             rospy.logerr('FP {} publisher failed. '.format(self.name))
             rospy.logerr(e)
-
+    def lastactionpublished(self):
+        rospy.loginfo('Last action published was: %s'%self.lastaction)
 class tsn_classifier:
   def __init__(self):
     global mypath
@@ -156,7 +173,7 @@ class tsn_classifier:
     #print((scores))
 
     #this publishes the instant time version, aka, per frame
-    self.label_pub.pub(scores)
+    self.label_pub.pub([scores])
     rospy.logdebug("published the label for instant time version!")
 
     #this part publishes the frame_window version
