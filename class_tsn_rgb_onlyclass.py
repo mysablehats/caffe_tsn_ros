@@ -141,6 +141,7 @@ class tsn_classifier:
     self.label_fw_pub = FunnyPublisher("action_fw", self.actionlist, self.defprox)
     self.label_pub = FunnyPublisher("action", self.actionlist, self.defprox)
     self.ownlabel_pub = FunnyPublisher("action_own", self.actionlist, self.defprox)
+    rospy.set_param('~alive',0.5)
     rospy.loginfo("waiting for callback from " +rospy.resolve_name('video_topic') +" to do anything")
 
   def start_vidscores(self,req):
@@ -164,6 +165,7 @@ class tsn_classifier:
       return []
   def callback(self,data):
     rospy.logdebug("reached callback. that means I can read the Subscriber!")
+    rospy.set_param('~alive',1)
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
     except CvBridgeError as e:
