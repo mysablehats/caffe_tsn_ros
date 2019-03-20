@@ -2,17 +2,13 @@
 <launch>
   <arg name="img" default="/image_raw"/>
   <arg name="machine"/>
-  <arg name="rgbOrFlow" default="rgb"/>
-  <node name="class_tsn_$(arg rgbOrFlow)" pkg="caffe_tsn_ros" machine="$(arg machine)" type="class_tsn.py" respawn="false" output="screen" ns="$(arg rgbOrFlow)" >
+  <node name="class_tsn_rgb" pkg="caffe_tsn_ros" machine="$(arg machine)" type="class_tsn_rgb_onlyclass.py" respawn="false" output="screen" >
     <!-- <node name="class_tsn_rgb" pkg="caffe_tsn_ros" type="class_tsn_rgb3.py" respawn="false" output="screen" ns="subject"> -->
 
     <remap from="video_topic" to="$(arg img)"/>
 	  <param name="device_id" value="0"/>
     <param name="dataset" value="hmdb51"/>
     <param name="split" value="1"/>
-    <param name="step" value="6"/>
-    <param name="classifier_type" value="$(arg rgbOrFlow)"/>
-    <param name="stack_depth" value="5"/>
     <!-- TODO: frame_size should maybe be variable and maybe I should publish to
 this node only a box around the subject. this would be a big change and would
 require retraining and even maybe another node/cnn thingy publishing info about

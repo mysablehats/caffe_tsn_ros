@@ -88,6 +88,13 @@ class tsn_classifier:
     self.dataset = rospy.get_param('~dataset','hmdb51')
     self.device_id = rospy.get_param('~device_id',0)
     self.split = rospy.get_param('~split',1)
+    self.step = rospy.get_param('~step',6)
+    # this should actually be
+    # step = (frame_cnt - stack_depth) / (args.num_frame_per_video-1)
+    # it will change depending on the action length, a value I don't have if I am classifying real time, but that I could get if I am doing it by service calls!
+
+    self.stack_depth = rospy.get_param('~stack_depth',5)
+    # stack_depth is 1 for rgb and 5 for flows. I am letting it be 5 to test creating an array of cv_images
 
     self.classwindow = rospy.get_param('~classification_frame_window',50)
     #whatswrong = (rospy.resolve_name('~action_list'))
