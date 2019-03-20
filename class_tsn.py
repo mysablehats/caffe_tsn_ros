@@ -88,7 +88,7 @@ class tsn_classifier:
     self.dataset = rospy.get_param('~dataset','hmdb51')
     self.device_id = rospy.get_param('~device_id',0)
     self.split = rospy.get_param('~split',1)
-    self.rgbOrFlow = rospy.get_param('~classifier_type','rgb')
+    self.rgbOrFlow = rospy.get_param('~classifier_type')
     self.step = rospy.get_param('~step',6)
     # this should actually be
     # step = (frame_cnt - stack_depth) / (args.num_frame_per_video-1)
@@ -140,6 +140,8 @@ class tsn_classifier:
     self.frame_scores = []
     self.prototxt = mypath+'/models/'+ self.dataset +'/tsn_bn_inception_'+self.rgbOrFlow+'_deploy.prototxt'
     self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+str(self.split)+'_tsn_'+self.rgbOrFlow+'_reference_bn_inception.caffemodel'
+    rospy.loginfo("loading prototxt {}".format(self.prototxt))
+    rospy.loginfo("loading caffemodel {}".format(self.caffemodel))
     self.net = CaffeNet(self.prototxt, self.caffemodel, self.device_id)
 
     self.ownvidscores = []
@@ -188,12 +190,15 @@ class tsn_classifier:
         #self.cv_image_stack.append(cv_image)
         #this would be incorrect, i need to get each matrix and put it together in a stack. first x then y
         # from ros_flow_bg, I can see that x is the 0 component and y the 1 component. I hope bgr8 stays bgr8 and we don't flip things around here!
-        self.cv_image_stack.extend([cv_image[:,:,0], cv_image[:,:,1]])
+        self.cv_image_stack.append(cv_image[:,:,0])
+        self.cv_image_stack.append(cv_image[:,:,1])
+#        self.cv_image_stack.extend([cv_image[:,:,0], cv_image[:,:,1]])
+
 
         if len(self.cv_image_stack)>2*self.stack_depth: #keeps at most 2*self.stack_depth images in cv_image_stack, the 2 comes from the fact that we are using flow_x and flow_y
             self.cv_image_stack.pop(0)
             self.cv_image_stack.pop(0)
-    if self.stack_count%self.step == 0:
+    if self.stack_count%self.step == 0 and len(self.cv_image_stack)==10:
         rospy.logdebug("reached execution part of callback!")
         self.stack_count = 0 ## we don't keep a large number here.
         ### i can maybe use a lambda to abstract this. is it faster than an if though?
