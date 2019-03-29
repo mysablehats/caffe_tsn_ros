@@ -11,7 +11,7 @@ import rosparam
 import cv2
 from std_srvs.srv import Empty
 from caffe_tsn_ros.srv import *
-from std_msgs.msg import String
+from std_msgs.msg import String, Header
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
@@ -33,7 +33,7 @@ from copy import deepcopy
 
 class FunnyPublisher:
     def __init__(self,name, actionlist, defprox):
-        self.label_pub = rospy.Publisher(name+'_label',String, queue_size=1)
+        self.label_pub = rospy.Publisher(name+'_label',caffe_tsn_ros.msg.Action, queue_size=1)
         self.array_pub = rospy.Publisher(name+'_label_dic',caffe_tsn_ros.msg.ActionDic, queue_size=1)
         self.actionlist = actionlist
         #rospy.logdebug('my action list:')
@@ -50,10 +50,15 @@ class FunnyPublisher:
             #rospy.logdebug('length of conflist %d () for hmdb51 should be 51'%len(conflist))
             #rospy.logdebug(conflist)
             self.lastaction = self.actionlist[np.argmax(conflist)]
-            self.label_pub.publish(self.lastaction)
+            bestAction = caffe_tsn_ros.msg.Action()
+            #bestAction.header = Header()
+            bestAction.action = self.actionlist[np.argmax(conflist)]
+            bestAction.confidence = np.max(conflist)
+            self.label_pub.publish(bestAction)
             actionDic_but_it_is_a_list = []
             for action,confidence in zip(self.actionlist,conflist):
                 thisAction = caffe_tsn_ros.msg.Action()
+                thisAction.header = Header()
                 thisAction.action = action
                 thisAction.confidence = confidence
                 #rospy.logdebug('what I am stacking: action, confidence: (%s,%f)'%(action, confidence))
