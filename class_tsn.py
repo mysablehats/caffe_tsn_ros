@@ -198,33 +198,33 @@ class tsn_classifier:
         if len(self.cv_image_stack)>2*self.stack_depth: #keeps at most 2*self.stack_depth images in cv_image_stack, the 2 comes from the fact that we are using flow_x and flow_y
             self.cv_image_stack.pop(0)
             self.cv_image_stack.pop(0)
-    if self.stack_count%self.step == 0 and len(self.cv_image_stack)==10:
+    if self.stack_count%self.step == 0:
         rospy.logdebug("reached execution part of callback!")
         self.stack_count = 0 ## we don't keep a large number here.
+        scores = None
         ### i can maybe use a lambda to abstract this. is it faster than an if though?
         if self.rgbOrFlow == 'rgb':
             scores = self.net.predict_single_frame([cv_image,], 'fc-action', frame_size=(self.framesize_width, self.framesize_height))
-        elif self.rgbOrFlow == 'flow':
+        elif self.rgbOrFlow == 'flow' and len(self.cv_image_stack)==10:
             scores = self.net.predict_single_flow_stack(self.cv_image_stack, 'fc-action', frame_size=(self.framesize_width, self.framesize_height))
         #print((scores))
+        if isinstance(scores, np.ndarray):
+            #this publishes the instant time version, aka, per frame
+            self.label_pub.pub([scores])
+            rospy.logdebug("published the label for instant time version!")
 
-        #this publishes the instant time version, aka, per frame
-        self.label_pub.pub([scores])
-        rospy.logdebug("published the label for instant time version!")
+            #this part publishes the frame_window version
+            self.frame_scores.append(scores)
+            if len(self.frame_scores)>self.classwindow:
+                self.frame_scores.pop(0)
+                self.label_fw_pub.pub(self.frame_scores)
+                rospy.logdebug("published the label for the frame window version!")
 
-        #this part publishes the frame_window version
-        self.frame_scores.append(scores)
-        if len(self.frame_scores)>self.classwindow:
-            self.frame_scores.pop(0)
-            self.label_fw_pub.pub(self.frame_scores)
-            rospy.logdebug("published the label for the frame window version!")
-
-        with self.lock:
-            if self.startedownvid:
-                self.ownvidscores.append(scores)
-            else:
-                rospy.logdebug_throttle(20,"waiting for start_vidscores call to start classifying ownvid")
-
+            with self.lock:
+                if self.startedownvid:
+                    self.ownvidscores.append(scores)
+                else:
+                    rospy.logdebug_throttle(20,"waiting for start_vidscores call to start classifying ownvid")
 
     self.stack_count = self.stack_count + 1
     # try:
