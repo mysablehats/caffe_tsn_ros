@@ -23,7 +23,7 @@ print(os.getcwd())
 mypath = "/temporal-segment-networks"
 sys.path.append(mypath)
 sys.path.append(os.path.abspath(mypath+"/tools"))
-sys.path.insert(0, mypath+'/lib/caffe-action/python') ## should use os.joinpath?
+sys.path.insert(0, mypath+'/lib/caffe-action/python') ## should use os.path.join?
 from pyActionRecog.action_caffe import CaffeNet
 import argparse
 import math
@@ -58,7 +58,7 @@ class FunnyPublisher:
             actionDic_but_it_is_a_list = []
             for action,confidence in zip(self.actionlist,conflist):
                 thisAction = caffe_tsn_ros.msg.Action()
-                thisAction.header = Header()
+
                 thisAction.action = action
                 thisAction.confidence = confidence
                 #rospy.logdebug('what I am stacking: action, confidence: (%s,%f)'%(action, confidence))
@@ -69,7 +69,11 @@ class FunnyPublisher:
                 #rospy.logdebug('what I actually stacked: action, confidence: (%s,%f)'%(actionvec.action, actionvec.confidence))
             #rospy.logdebug('what I was meant to publish is: len %d'%len(actionDic_but_it_is_a_list))
             #rospy.logdebug(actionDic_but_it_is_a_list)
-            self.array_pub.publish(actionDic_but_it_is_a_list)
+            actiondic = caffe_tsn_ros.msg.ActionDic()
+            actiondic.actions = actionDic_but_it_is_a_list
+            actiondic.header = Header()
+            actiondic.header.stamp = rospy.Time.now() ### or maybe I should be copying their timestamp with denseflow and keeping them here instead...
+            self.array_pub.publish(actiondic)
             rospy.logdebug('FP {} published alright. '.format(self.name))
         except Exception as e:
             rospy.logerr('FP {} publisher failed. '.format(self.name))
