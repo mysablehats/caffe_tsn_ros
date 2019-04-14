@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="img" default="/image_raw"/>
-  <arg name="machine"/>
+  <arg name="machine" default="this_machine"/>
   <arg name="rgbOrFlow" default="rgb"/>
   <arg name="split" default="1"/>
   <arg name="cfw" default="50"/>
+  <machine name="this_machine" address="localhost"/>
   <node name="class_tsn_$(arg rgbOrFlow)" pkg="caffe_tsn_ros" machine="$(arg machine)" type="class_tsn.py" respawn="false" output="screen" >
     <!-- <node name="class_tsn_rgb" pkg="caffe_tsn_ros" type="class_tsn_rgb3.py" respawn="false" output="screen" ns="subject"> -->
 
