@@ -11,7 +11,7 @@ import rosparam
 import cv2
 from std_srvs.srv import Empty
 from caffe_tsn_ros.srv import *
-from std_msgs.msg import String, Header
+from std_msgs.msg import String, Header, Float32MultiArray, MultiArrayDimension
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import numpy as np
@@ -32,58 +32,6 @@ import multiprocessing
 import caffe_tsn_ros.msg
 from copy import deepcopy
 
-## do I need this?
-#import caffe
-from caffe.io import oversample
-#from utils.io import flow_stack_oversample, fast_list2arr
-
-class MyCaffeNet(CaffeNet):
-    def __init__(self,*args, **kwargs):
-        super(MyCaffeNet,self).__init__(*args, **kwargs) ## will it import things as well? if it doesn't then I will change the original file and rebuild the whole docker...
-
-    ### the changes in these 2 are minuscule. I just want to output not the result from forward, but forward up to a point.
-    def predict_single_frame(self, frame, score_name, over_sample=True, multiscale=None, frame_size=None, end=None):
-
-        if frame_size is not None:
-            frame = [cv2.resize(x, frame_size) for x in frame]
-
-        if over_sample:
-            if multiscale is None:
-                os_frame = oversample(frame, (self._sample_shape[2], self._sample_shape[3]))
-            else:
-                os_frame = []
-                for scale in multiscale:
-                    resized_frame = [cv2.resize(x, (0,0), fx=1.0/scale, fy=1.0/scale) for x in frame]
-                    os_frame.extend(oversample(resized_frame, (self._sample_shape[2], self._sample_shape[3])))
-        else:
-            os_frame = fast_list2arr(frame)
-        data = fast_list2arr([self._transformer.preprocess('data', x) for x in os_frame])
-
-        self._net.blobs['data'].reshape(*data.shape)
-        self._net.reshape()
-        out = self._net.forward(blobs=[score_name,], data=data, end=end)
-        return out[score_name].copy()
-
-    def predict_single_flow_stack(self, frame, score_name, over_sample=True, frame_size=None, end=None):
-
-        if frame_size is not None:
-            frame = fast_list2arr([cv2.resize(x, frame_size) for x in frame])
-        else:
-            frame = fast_list2arr(frame)
-
-        if over_sample:
-            os_frame = flow_stack_oversample(frame, (self._sample_shape[2], self._sample_shape[3]))
-        else:
-            os_frame = fast_list2arr([frame])
-
-        data = os_frame - np.float32(128.0)
-
-        self._net.blobs['data'].reshape(*data.shape)
-        self._net.reshape()
-        out = self._net.forward(blobs=[score_name,], data=data, end=end)
-        return out[score_name].copy()
-
-
 class tsn_classifier:
   def __init__(self):
     global mypath
@@ -92,7 +40,7 @@ class tsn_classifier:
     self.start_vidscores = rospy.Service('start_vidscores', Empty, self.start_vidscores)
     self.stop_vidscores = rospy.Service('stop_vidscores', Empty, self.stop_vidscores)
     # topics published
-    self.scores_pub = rospy.Publisher("scores",caffe_tsn_ros.msg.Scores, queue_size=1)
+    self.scores_pub = rospy.Publisher("scores",Float32MultiArray, queue_size=1)
     # self.label_fw_pub = rospy.Publisher("action_fw", String, queue_size=1)
     # self.label_pub = rospy.Publisher("action", String, queue_size=1)
     # self.ownlabel_pub = rospy.Publisher("action_own", String, queue_size=1)
@@ -117,7 +65,7 @@ class tsn_classifier:
     self.framesize_height = rospy.get_param('~framesize_height',256)
 
     # topics subscribed
-    self.image_sub = rospy.Subscriber('video_topic', Image,self.callback,queue_size=1)
+    self.image_sub = rospy.Subscriber('video_topic', Image, self.callback,queue_size=1)
 
     # internals
     self.bridge = CvBridge()
@@ -126,7 +74,7 @@ class tsn_classifier:
     self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+str(self.split)+'_tsn_'+self.rgbOrFlow+'_reference_bn_inception.caffemodel'
     rospy.loginfo("loading prototxt {}".format(self.prototxt))
     rospy.loginfo("loading caffemodel {}".format(self.caffemodel))
-    self.net = MyCaffeNet(self.prototxt, self.caffemodel, self.device_id)
+    self.net = CaffeNet(self.prototxt, self.caffemodel, self.device_id)
 
     # when I instantiate the classifier, the startedownvid is working already. this influences how vsmf_srv will behave, so it needs to be like this, I think.
     self.startedownvid = True
@@ -193,12 +141,33 @@ class tsn_classifier:
             scores = self.net.predict_single_flow_stack(self.cv_image_stack, 'global_pool', frame_size=(self.framesize_width, self.framesize_height))
 
         #print(type(scores))
-        scoremsg = caffe_tsn_ros.msg.Scores()
-        scoremsg.scores = scores
-        self.scores_pub.publish(scoremsg)
+        #print(scores.dtype)
+        #scoremsg = caffe_tsn_ros.msg.Scores()
+        #scoremsg.test = 'hello'
+        #scoremsg.scores = scores
+        #print(scoremsg)
+        #scores = np.squeeze(scores)
+        #scores = np.array([[[1.,2.],[3.,4.],[5.,6.]],[[11.,12.],[13.,14.],[15.,16.]]],dtype='float32')
+        scoresmsg = Float32MultiArray()
+        scoresmsg.layout.dim = []
+        dims = np.array(scores.shape)
+        scoresize = dims.prod()/float(scores.nbytes)
+        for i in range(0,len(dims)):
+            #print(i)
+            scoresmsg.layout.dim.append(MultiArrayDimension())
+            scoresmsg.layout.dim[i].size = dims[i]
+            scoresmsg.layout.dim[i].stride = dims[i:].prod()/scoresize
+            scoresmsg.layout.dim[i].label = 'dim_%d'%i
+            #print(scoresmsg.layout.dim[i].size)
+            #print(scoresmsg.layout.dim[i].stride)
+        scoresmsg.data = np.frombuffer(scores.tobytes(),'float32')
+        self.scores_pub.publish(scoresmsg)
+        #self.scores_pub.publish(self.bridge.cv2_to_imgmsg(scores, '32FC1'))
+        #self.scores_pub.publish(scoremsg)
+        #print(self.scores_pub.get_num_connections())
         #print((scores))
         #print(np.shape(scores))
-
+        #print(scores.shape)
         if isinstance(scores, np.ndarray):
             #this publishes the instant time version, aka, per frame
             #self.label_pub.pub([scores])
