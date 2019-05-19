@@ -33,6 +33,7 @@ from copy import deepcopy
 
 class FunnyPublisher:
     def __init__(self,name, actionlist, defprox):
+        self.simple_pub = rospy.Publisher(name,String, queue_size=1)
         self.label_pub = rospy.Publisher(name+'_label',caffe_tsn_ros.msg.Action, queue_size=1)
         self.array_pub = rospy.Publisher(name+'_label_dic',caffe_tsn_ros.msg.ActionDic, queue_size=1)
         self.actionlist = actionlist
@@ -51,8 +52,10 @@ class FunnyPublisher:
             #rospy.logdebug(conflist)
             self.lastaction = self.actionlist[np.argmax(conflist)]
             bestAction = caffe_tsn_ros.msg.Action()
+
             #bestAction.header = Header()
             bestAction.action = self.actionlist[np.argmax(conflist)]
+            self.simple_pub.publish(bestAction.action)
             bestAction.confidence = np.max(conflist)
             self.label_pub.publish(bestAction)
             actionDic_but_it_is_a_list = []
@@ -250,7 +253,7 @@ class tsn_classifier:
       #print(req.Split)
       self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+str(self.split)+'_tsn_'+self.rgbOrFlow+'_reference_bn_inception.caffemodel'
       self.net = CaffeNet(self.prototxt, self.caffemodel, self.device_id)
-      self.image_sub = rospy.Subscriber(self.videotopic, Image,self.callback,queue_size=1)
+      self.image_sub = rospy.Subscriber('video_topic', Image,self.callback,queue_size=1)
       #print('Dum')
       return []
 

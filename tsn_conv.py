@@ -148,20 +148,6 @@ class tsn_classifier:
         #print(scoremsg)
         #scores = np.squeeze(scores)
         #scores = np.array([[[1.,2.],[3.,4.],[5.,6.]],[[11.,12.],[13.,14.],[15.,16.]]],dtype='float32')
-        scoresmsg = Float32MultiArray()
-        scoresmsg.layout.dim = []
-        dims = np.array(scores.shape)
-        scoresize = dims.prod()/float(scores.nbytes)
-        for i in range(0,len(dims)):
-            #print(i)
-            scoresmsg.layout.dim.append(MultiArrayDimension())
-            scoresmsg.layout.dim[i].size = dims[i]
-            scoresmsg.layout.dim[i].stride = dims[i:].prod()/scoresize
-            scoresmsg.layout.dim[i].label = 'dim_%d'%i
-            #print(scoresmsg.layout.dim[i].size)
-            #print(scoresmsg.layout.dim[i].stride)
-        scoresmsg.data = np.frombuffer(scores.tobytes(),'float32')
-        self.scores_pub.publish(scoresmsg)
         #self.scores_pub.publish(self.bridge.cv2_to_imgmsg(scores, '32FC1'))
         #self.scores_pub.publish(scoremsg)
         #print(self.scores_pub.get_num_connections())
@@ -171,6 +157,27 @@ class tsn_classifier:
         if isinstance(scores, np.ndarray):
             #this publishes the instant time version, aka, per frame
             #self.label_pub.pub([scores])
+            ## Not sure if this MultiArrayDimension thing is working. In any
+            ## case, it is already a LOT of data per frame; publishing the chunk
+            ## at the end of the video, all at the same time would probably
+            ## cause a lot of unnecessary waiting
+            # TO CONSIDER: this is fast, so I think it doesn't matter, but I
+            # believe the layout could be pre-set, since it doesn't change on a
+            # frame by frame basis.
+            scoresmsg = Float32MultiArray()
+            scoresmsg.layout.dim = []
+            dims = np.array(scores.shape)
+            scoresize = dims.prod()/float(scores.nbytes)
+            for i in range(0,len(dims)):
+                #print(i)
+                scoresmsg.layout.dim.append(MultiArrayDimension())
+                scoresmsg.layout.dim[i].size = dims[i]
+                scoresmsg.layout.dim[i].stride = dims[i:].prod()/scoresize
+                scoresmsg.layout.dim[i].label = 'dim_%d'%i
+                #print(scoresmsg.layout.dim[i].size)
+                #print(scoresmsg.layout.dim[i].stride)
+            scoresmsg.data = np.frombuffer(scores.tobytes(),'float32')
+            self.scores_pub.publish(scoresmsg)
             #rospy.logdebug("published the label for instant time version!")
 
             with self.lock:
@@ -195,7 +202,7 @@ class tsn_classifier:
       #print(req.Split)
       self.caffemodel = mypath+'/models/'+ self.dataset +'_split_'+str(self.split)+'_tsn_'+self.rgbOrFlow+'_reference_bn_inception.caffemodel'
       self.net = CaffeNet(self.prototxt, self.caffemodel, self.device_id)
-      self.image_sub = rospy.Subscriber(self.videotopic, Image,self.callback,queue_size=1)
+      self.image_sub = rospy.Subscriber('video_topic', Image,self.callback,queue_size=1)
       #print('Dum')
       return []
 
@@ -207,7 +214,7 @@ def main(argss):
     rospy.spin()
   except KeyboardInterrupt:
     print("Shutting down")
-  # cv2.destroyAllWindows()
+
   except rospy.ROSException as e:
     rospy.spin()
     rospy.logerr(e)
