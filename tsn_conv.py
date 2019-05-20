@@ -41,9 +41,9 @@ class tsn_classifier:
     self.stop_vidscores = rospy.Service('stop_vidscores', Empty, self.stop_vidscores)
     # topics published
     self.scores_pub = rospy.Publisher("scores",Float32MultiArray, queue_size=1)
-    # self.label_fw_pub = rospy.Publisher("action_fw", String, queue_size=1)
+    self.score_fw_pub = rospy.Publisher("action_fw", caffe_tsn_ros.msg.ScoreArray, queue_size=1)
     # self.label_pub = rospy.Publisher("action", String, queue_size=1)
-    # self.ownlabel_pub = rospy.Publisher("action_own", String, queue_size=1)
+    self.ownlabel_pub = rospy.Publisher("action_own", caffe_tsn_ros.msg.ScoreArray, queue_size=1)
 
     # parameters
     self.dataset = rospy.get_param('~dataset','hmdb51')
@@ -59,6 +59,8 @@ class tsn_classifier:
     self.stack_depth = rospy.get_param('~stack_depth',5)
     self.stack_count = 0
     self.cv_image_stack = []
+
+    self.classwindow = rospy.get_param('~classification_frame_window',50)
 
     ###probably should use the nice rosparam thingy here to avoid these problems...
     self.framesize_width = rospy.get_param('~framesize_width',340)
@@ -76,6 +78,8 @@ class tsn_classifier:
     rospy.loginfo("loading caffemodel {}".format(self.caffemodel))
     self.net = CaffeNet(self.prototxt, self.caffemodel, self.device_id)
 
+    self.frame_scores = caffe_tsn_ros.msg.ScoreArray()
+    self.ownvidscores = caffe_tsn_ros.msg.ScoreArray()
     # when I instantiate the classifier, the startedownvid is working already. this influences how vsmf_srv will behave, so it needs to be like this, I think.
     self.startedownvid = True
     self.lock = threading.Lock()
@@ -98,11 +102,11 @@ class tsn_classifier:
           self.startedownvid = False
           if self.ownvidscores:
               #### I am going to publish now a set of matrices, right?
-              #self.ownlabel_pub.pub(self.ownvidscores)
+              self.ownlabel_pub.pub(self.ownvidscores)
               pass
           else:
               rospy.logerr('ownvidscores is empty!!!!!!!!!!!!!!! are we locking for too long?')
-          #self.ownvidscores = []
+          self.ownvidscores = caffe_tsn_ros.msg.ScoreArray()
           rospy.logdebug("published the label for the own video version!")
           rospy.logwarn("stopped classifying own vid")
 
@@ -180,10 +184,17 @@ class tsn_classifier:
             self.scores_pub.publish(scoresmsg)
             #rospy.logdebug("published the label for instant time version!")
 
+            #this part publishes the frame_window version
+            self.frame_scores.scores.append(scores)
+            if len(self.frame_scores.scores)>self.classwindow:
+                self.frame_scores.scores.pop(0)
+                self.label_fw_pub.pub(self.frame_scores)
+                rospy.logdebug("published the label for the frame window version!")
+
             with self.lock:
                 if self.startedownvid:
-                    #self.ownvidscores.append(scores)
-                    pass
+                    self.ownvidscores.scores.append(scores)
+                    #pass
                 else:
                     rospy.logdebug_throttle(20,"waiting for start_vidscores call to start classifying ownvid")
 

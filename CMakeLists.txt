@@ -53,6 +53,7 @@ add_message_files(
    Action.msg
    ActionDic.msg
    Scores.msg
+   ScoreArray.msg
  )
 
 ## Generate services in the 'srv' folder
