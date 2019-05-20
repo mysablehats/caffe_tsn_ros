@@ -41,9 +41,9 @@ class tsn_classifier:
     self.stop_vidscores = rospy.Service('stop_vidscores', Empty, self.stop_vidscores)
     # topics published
     self.scores_pub = rospy.Publisher("scores",Float32MultiArray, queue_size=1)
-    self.score_fw_pub = rospy.Publisher("action_fw", caffe_tsn_ros.msg.ScoreArray, queue_size=1)
+    self.score_fw_pub = rospy.Publisher("scores_fw", caffe_tsn_ros.msg.ScoreArray, queue_size=1)
     # self.label_pub = rospy.Publisher("action", String, queue_size=1)
-    self.ownlabel_pub = rospy.Publisher("action_own", caffe_tsn_ros.msg.ScoreArray, queue_size=1)
+    self.ownlabel_pub = rospy.Publisher("scores_own", caffe_tsn_ros.msg.ScoreArray, queue_size=1)
 
     # parameters
     self.dataset = rospy.get_param('~dataset','hmdb51')
@@ -102,8 +102,9 @@ class tsn_classifier:
           self.startedownvid = False
           if self.ownvidscores:
               #### I am going to publish now a set of matrices, right?
-              self.ownlabel_pub.pub(self.ownvidscores)
-              pass
+
+              self.ownlabel_pub.publish(self.ownvidscores)
+              #pass
           else:
               rospy.logerr('ownvidscores is empty!!!!!!!!!!!!!!! are we locking for too long?')
           self.ownvidscores = caffe_tsn_ros.msg.ScoreArray()
@@ -168,6 +169,8 @@ class tsn_classifier:
             # TO CONSIDER: this is fast, so I think it doesn't matter, but I
             # believe the layout could be pre-set, since it doesn't change on a
             # frame by frame basis.
+            myheader = Header()
+            myheader.stamp = rospy.Time.now()
             scoresmsg = Float32MultiArray()
             scoresmsg.layout.dim = []
             dims = np.array(scores.shape)
@@ -185,15 +188,18 @@ class tsn_classifier:
             #rospy.logdebug("published the label for instant time version!")
 
             #this part publishes the frame_window version
-            self.frame_scores.scores.append(scores)
+            self.frame_scores.scores.append(scoresmsg)
             if len(self.frame_scores.scores)>self.classwindow:
+                self.frame_scores.header = myheader
                 self.frame_scores.scores.pop(0)
-                self.label_fw_pub.pub(self.frame_scores)
+                self.score_fw_pub.publish(self.frame_scores)
                 rospy.logdebug("published the label for the frame window version!")
 
             with self.lock:
                 if self.startedownvid:
-                    self.ownvidscores.scores.append(scores)
+                    self.ownvidscores.scores.append(scoresmsg)
+                    self.ownvidscores.header = myheader
+
                     #pass
                 else:
                     rospy.logdebug_throttle(20,"waiting for start_vidscores call to start classifying ownvid")
