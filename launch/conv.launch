@@ -4,7 +4,11 @@
   <arg name="machine" default="this_machine"/>
   <arg name="rgbOrFlow" default="rgb"/>
   <arg name="split" default="1"/>
-  <arg name="cfw" default="50"/>
+  <arg name="cfw" default="10"/>
+  <!-- cfw of 50 was giving me a bw of ~7MB/s which was choking my python state
+  machine. I've decreased it accordingly. Also I was not clearing the frame
+  stack once we started a new video, so this was also increasing bw, since for a
+  lot of time fw should not publish anything-->
 
   <include file="$(find caffe_tsn_ros)/launch/common.launch">
     <arg name="img" default="$(arg img)"/>

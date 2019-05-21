@@ -101,6 +101,7 @@ class tsn_classifier:
     self.device_id = rospy.get_param('~device_id',0)
     self.split = rospy.get_param('~split',1)
     self.rgbOrFlow = rospy.get_param('~classifier_type')
+    self.clear_fw_after_new_vid = rospy.get_param('~clear_fw_after_new_vid', True)
     self.step = rospy.get_param('~step',6)
     # this should actually be
     # step = (frame_cnt - stack_depth) / (args.num_frame_per_video-1)
@@ -183,6 +184,8 @@ class tsn_classifier:
           else:
               rospy.logerr('ownvidscores is empty!!!!!!!!!!!!!!! are we locking for too long?')
           self.ownvidscores = []
+          if self.clear_fw_after_new_vid:
+                  self.frame_scores = []
           rospy.logdebug("published the label for the own video version!")
           rospy.logwarn("stopped classifying own vid")
 

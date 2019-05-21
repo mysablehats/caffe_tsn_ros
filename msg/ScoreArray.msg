@@ -1,2 +1,2 @@
 Header header
-std_msgs/Float32MultiArray[] scores
+std_msgs/Float32MultiArray[] data

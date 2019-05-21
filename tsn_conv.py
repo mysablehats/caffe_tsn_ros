@@ -50,6 +50,7 @@ class tsn_classifier:
     self.device_id = rospy.get_param('~device_id',0)
     self.split = rospy.get_param('~split',1)
     self.rgbOrFlow = rospy.get_param('~classifier_type')
+    self.clear_fw_after_new_vid = rospy.get_param('~clear_fw_after_new_vid', True)
     self.step = rospy.get_param('~step',6)
     # this should actually be
     # step = (frame_cnt - stack_depth) / (args.num_frame_per_video-1)
@@ -60,7 +61,8 @@ class tsn_classifier:
     self.stack_count = 0
     self.cv_image_stack = []
 
-    self.classwindow = rospy.get_param('~classification_frame_window',50)
+    self.classwindow = rospy.get_param('~classification_frame_window','undefined')
+    assert not self.classwindow == 'undefined'
 
     ###probably should use the nice rosparam thingy here to avoid these problems...
     self.framesize_width = rospy.get_param('~framesize_width',340)
@@ -84,8 +86,7 @@ class tsn_classifier:
     self.startedownvid = True
     self.lock = threading.Lock()
 
-    #publishers
-    ###need to publish the not-last layer thingy!
+    self.published_fw = False
 
     rospy.set_param('~alive',0.5)
     rospy.loginfo("waiting for callback from " +rospy.resolve_name('video_topic') +" to do anything")
@@ -94,7 +95,9 @@ class tsn_classifier:
       # I will need to use locks here, I think...
       with self.lock:
           self.startedownvid = True
-      rospy.logwarn("Started classifying own vid!")
+          self.published_fw = False
+
+      rospy.loginfo("Started classifying own vid!")
       return []
   def stop_vidscores(self,req):
       # I will need to use locks here, I think...
@@ -102,14 +105,21 @@ class tsn_classifier:
           self.startedownvid = False
           if self.ownvidscores:
               #### I am going to publish now a set of matrices, right?
-
               self.ownlabel_pub.publish(self.ownvidscores)
+              rospy.logdebug("length of ownvidscores:%d"%(len(self.ownvidscores.data)))
               #pass
           else:
               rospy.logerr('ownvidscores is empty!!!!!!!!!!!!!!! are we locking for too long?')
           self.ownvidscores = caffe_tsn_ros.msg.ScoreArray()
+          if not self.published_fw:
+              rospy.logwarn("did not publish a single fw for this video")
+              rospy.logwarn("length of fw:%d"%(len(self.frame_scores.data)))
+          if self.clear_fw_after_new_vid:
+              self.frame_scores = caffe_tsn_ros.msg.ScoreArray()
+
+
           rospy.logdebug("published the label for the own video version!")
-          rospy.logwarn("stopped classifying own vid")
+          rospy.loginfo("stopped classifying own vid")
 
       return []
   def callback(self,data):
@@ -188,18 +198,24 @@ class tsn_classifier:
             #rospy.logdebug("published the label for instant time version!")
 
             #this part publishes the frame_window version
-            self.frame_scores.scores.append(scoresmsg)
-            if len(self.frame_scores.scores)>self.classwindow:
+            self.frame_scores.data.append(scoresmsg)
+            #rospy.logwarn("FISHY: length of fw:%d"%(len(self.frame_scores.data)))
+            #rospy.logwarn("FISHY: self.classwindow:%d"%self.classwindow)
+            if len(self.frame_scores.data)>self.classwindow:
+                #rospy.logwarn("FISHY: got into the loop")
+
                 self.frame_scores.header = myheader
-                self.frame_scores.scores.pop(0)
+                self.frame_scores.data.pop(0)
                 self.score_fw_pub.publish(self.frame_scores)
+                #rospy.logwarn("FISHY: passed the publisher, so it must have worked?")
+                with self.lock:
+                    self.published_fw = True ## it was not working without the lock
                 rospy.logdebug("published the label for the frame window version!")
 
             with self.lock:
                 if self.startedownvid:
-                    self.ownvidscores.scores.append(scoresmsg)
+                    self.ownvidscores.data.append(scoresmsg)
                     self.ownvidscores.header = myheader
-
                     #pass
                 else:
                     rospy.logdebug_throttle(20,"waiting for start_vidscores call to start classifying ownvid")

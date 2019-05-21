@@ -4,7 +4,7 @@
   <arg name="machine" default="this_machine"/>
   <arg name="rgbOrFlow" default="rgb"/>
   <arg name="split" default="1"/>
-  <arg name="cfw" default="50"/>
+  <arg name="cfw" default="3"/>
   <arg name="nodetype"/>
 
   <machine name="this_machine" address="localhost"/>
@@ -16,6 +16,11 @@
     <param name="dataset" value="hmdb51"/>
     <param name="split" value="$(arg split)"/>
     <param name="step" value="6"/>
+
+    <param name="clear_fw_after_new_vid" value="true"/>
+    <!-- ATTENTION:if true, may cause NO fw to be published for a given video if
+    video total number of frames < cfw  -->
+
     <param name="classifier_type" value="$(arg rgbOrFlow)"/>
     <param name="stack_depth" value="5"/>
     <!-- TODO: frame_size should maybe be variable and maybe I should publish to
